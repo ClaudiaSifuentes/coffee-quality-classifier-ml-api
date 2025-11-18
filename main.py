@@ -175,11 +175,33 @@ async def read_root():
                 display: none;
                 text-align: center;
                 margin-top: 20px;
+                padding: 20px;
+                background: #f0f0f0;
+                border-radius: 8px;
+                border: 2px solid #ddd;
+            }
+            .loading.show {
+                display: block !important;
             }
             .coffee-icon {
                 font-size: 3em;
                 text-align: center;
                 margin-bottom: 20px;
+            }
+            /* Asegurar que los resultados sean visibles */
+            .result {
+                margin-top: 20px !important;
+                padding: 20px !important;
+                border-radius: 8px !important;
+                display: none !important;
+            }
+            .result.show {
+                display: block !important;
+                animation: fadeIn 0.5s ease-in;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
             }
         </style>
     </head>
@@ -243,27 +265,41 @@ async def read_root():
         <script>
             document.getElementById('coffeeForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
+                console.log('Formulario enviado'); // Debug
                 
                 const loading = document.getElementById('loading');
                 const result = document.getElementById('result');
                 
-                loading.style.display = 'block';
-                result.style.display = 'none';
+                // Mostrar loading
+                loading.className = 'loading show';
+                result.className = 'result';
+                
+                // Obtener valores del formulario
+                const acidity = document.getElementById('acidity').value;
+                const sweetness = document.getElementById('sweetness').value;
+                const body = document.getElementById('body').value;
+                const aroma = document.getElementById('aroma').value;
+                const altitude = document.getElementById('altitude').value;
+                
+                console.log('Valores:', { acidity, sweetness, body, aroma, altitude }); // Debug
                 
                 const formData = new FormData();
-                formData.append('acidity', document.getElementById('acidity').value);
-                formData.append('sweetness', document.getElementById('sweetness').value);
-                formData.append('body', document.getElementById('body').value);
-                formData.append('aroma', document.getElementById('aroma').value);
-                formData.append('altitude', document.getElementById('altitude').value);
+                formData.append('acidity', acidity);
+                formData.append('sweetness', sweetness);
+                formData.append('body', body);
+                formData.append('aroma', aroma);
+                formData.append('altitude', altitude);
                 
                 try {
+                    console.log('Enviando petición...'); // Debug
                     const response = await fetch('/predict', {
                         method: 'POST',
                         body: formData
                     });
                     
+                    console.log('Respuesta recibida:', response.status); // Debug
                     const data = await response.json();
+                    console.log('Datos:', data); // Debug
                     
                     if (response.ok) {
                         const resultTitle = document.getElementById('resultTitle');
@@ -275,19 +311,24 @@ async def read_root():
                         confidenceText.textContent = `Confianza: ${(data.confidence * 100).toFixed(1)}%`;
                         
                         result.className = `result show ${data.quality.toLowerCase()}`;
+                        console.log('Resultado mostrado correctamente'); // Debug
                     } else {
-                        throw new Error(data.detail);
+                        throw new Error(data.detail || 'Error desconocido');
                     }
                 } catch (error) {
+                    console.error('Error:', error); // Debug
                     const resultTitle = document.getElementById('resultTitle');
                     const resultText = document.getElementById('resultText');
+                    const confidenceText = document.getElementById('confidenceText');
                     
                     resultTitle.textContent = 'Error';
                     resultText.textContent = `Error: ${error.message}`;
+                    confidenceText.textContent = '';
                     result.className = 'result show regular';
                 }
                 
-                loading.style.display = 'none';
+                loading.className = 'loading';
+                console.log('Loading oculto'); // Debug
             });
             
             function getQualityDescription(quality) {
